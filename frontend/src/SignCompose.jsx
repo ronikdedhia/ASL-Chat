@@ -96,6 +96,14 @@ export default function SignCompose({ onInsertText, onBackspace, onClose }) {
     return () => clearInterval(interval);
   }, [consented, cameraError, onInsertText]);
 
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   function handleSpace() {
     setSpelled((s) => s + ' ');
     onInsertText(' ');
@@ -136,7 +144,7 @@ export default function SignCompose({ onInsertText, onBackspace, onClose }) {
           <div className="sign-compose-actions">
             <button onClick={handleSpace}>Space</button>
             <button onClick={handleBackspace}>Backspace</button>
-            <button className="secondary" onClick={onClose}>Done</button>
+            <button className="secondary" onClick={onClose}>Close — review &amp; Send below</button>
           </div>
         </>
       )}

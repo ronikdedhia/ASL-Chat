@@ -31,6 +31,14 @@ body {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
+/* Clerk's own themed <SignIn/> card already provides the card chrome (background,
+   border-radius, shadow) via the appearance prop in AuthedGate.jsx — this wrapper is
+   just a width constraint, not a second nested card. */
+.clerk-sign-in-wrapper {
+  width: 100%;
+  max-width: 400px;
+}
+
 .join-card h1 {
   margin: 0 0 8px;
   font-size: 28px;
@@ -175,6 +183,7 @@ body {
 
 /* Chat room */
 .chat-room {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -268,6 +277,11 @@ body {
   margin: 0 0 6px;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.message-actions {
+  display: flex;
+  gap: 14px;
 }
 
 .view-as-sign-btn {
@@ -423,4 +437,385 @@ body {
 
 .sign-compose-actions button.secondary {
   background: #334155;
+}
+
+/* Recording banner (mic) */
+.recording-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1e293b;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #e2e8f0;
+}
+
+.recording-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: recording-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes recording-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.recording-stop-btn {
+  margin-left: auto;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Recent conversations (join screen) */
+.recent-conversations {
+  margin-bottom: 16px;
+}
+
+.recent-conversations-title {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0 0 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Chat header actions (notifications / vocabulary / display name) */
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.chat-header-link-btn {
+  background: none;
+  border: none;
+  color: #a5b4fc;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+/* Quick-reply phrases */
+.quick-phrases {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-phrase-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  border-radius: 14px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.quick-phrase-btn:hover {
+  border-color: #6366f1;
+}
+
+/* Playback speed controls (sign video) */
+.playback-speed-controls {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.playback-speed-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.playback-speed-btn.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: white;
+}
+
+/* Vocabulary library overlay */
+.vocab-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.vocab-panel {
+  background: #1e293b;
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.vocab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.vocab-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.vocab-close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.vocab-section {
+  margin-top: 20px;
+}
+
+.vocab-search {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #e2e8f0;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.vocab-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vocab-chip {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.vocab-chip:hover {
+  border-color: #6366f1;
+}
+
+.vocab-preview {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 110;
+  cursor: pointer;
+  padding: 16px;
+}
+
+.vocab-preview .sign-video {
+  max-width: 320px;
+  cursor: default;
+}
+
+.vocab-preview .sign-caption {
+  color: #e2e8f0;
+  margin-top: 12px;
+}
+
+/* Recent conversations — remove button */
+.recent-conversation-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recent-conversation-row {
+  flex: 1;
+  width: auto !important;
+}
+
+.recent-conversation-remove {
+  width: auto !important;
+  flex: none;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #64748b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.recent-conversation-remove:hover {
+  color: #f87171;
+  border-color: #f87171;
+}
+
+/* Message timestamp / sent check */
+.message-time {
+  color: #64748b;
+  font-size: 10px;
+  margin-left: auto;
+}
+
+.message-sent-check {
+  color: #6366f1;
+  font-size: 11px;
+}
+
+/* Character counter */
+.char-counter {
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+/* Day divider */
+.day-divider {
+  text-align: center;
+  color: #64748b;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 12px 0 8px;
+}
+
+/* Jump-to-bottom pill */
+.jump-to-bottom-btn {
+  position: absolute;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+}
+
+/* Learn ASL */
+.lesson-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.lesson-card {
+  text-align: left;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  color: #e2e8f0;
+}
+
+.lesson-card:hover {
+  border-color: #6366f1;
+}
+
+.lesson-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.lesson-complete-check {
+  color: #22c55e;
+}
+
+.lesson-card-description {
+  color: #94a3b8;
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.lesson-card-count {
+  color: #64748b;
+  font-size: 11px;
+  margin: 0;
+}
+
+.lesson-video {
+  max-width: 100%;
+  margin: 0 auto;
+  display: block;
+}
+
+.lesson-nav {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.lesson-nav-btn {
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.lesson-nav-btn.secondary {
+  background: #334155;
+}
+
+.lesson-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lesson-telegram {
+  text-align: center;
+  margin-top: 16px;
+  border-top: 1px solid #334155;
+  padding-top: 14px;
 }

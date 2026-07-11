@@ -44,7 +44,12 @@ export default function FindUserPanel({ myUserId, getAuthToken, onSelectUser }) 
   }, [query, getAuthToken]);
 
   function handlePick(result) {
-    onSelectUser({ room: directRoomId(myUserId, result.userId), roomLabel: result.name });
+    onSelectUser({
+      room: directRoomId(myUserId, result.userId),
+      roomLabel: result.name,
+      otherUserId: result.userId,
+      otherName: result.name,
+    });
   }
 
   return (
