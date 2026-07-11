@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { checkLetter } from './api';
 
+// Snapshot cadence left at 2.5s deliberately — it's what keeps a single signer's request
+// rate safely under Groq's free-tier ~30/min ceiling (see ARCHITECTURE.md); lowering it is
+// the one knob that risks real rate-limit errors, not just UX. STABLE_READS_REQUIRED is the
+// safe lever instead — dropping it from 2 to 1 roughly halves how long each letter takes to
+// confirm, at the cost of accepting a single confident read instead of two matching ones (a
+// real accuracy tradeoff, offset by the existing 65% confidence floor still applying).
 const SNAPSHOT_INTERVAL_MS = 2500;
 const CONFIDENCE_THRESHOLD = 65;
-const STABLE_READS_REQUIRED = 2; // same letter this many snapshots in a row before it's confirmed
+const STABLE_READS_REQUIRED = 1;
 
 export default function SignCompose({ onInsertText, onBackspace, onClose }) {
   const [consented, setConsented] = useState(false);

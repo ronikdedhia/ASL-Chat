@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { socket } from './socket.js';
 import JoinScreen from './JoinScreen.jsx';
 import ChatRoom from './ChatRoom.jsx';
@@ -19,6 +19,28 @@ export default function App({ fixedDisplayName, getAuthToken, myUserId } = {}) {
   // show "X is signing…" distinctly from "X typing…", not fold both into one generic label.
   const [typingUsers, setTypingUsers] = useState(new Map());
 
+  // Mirrors `joined`/the last-successful join params, but as refs — read inside the
+  // 'connect' listener below, which is registered once and would otherwise only ever see
+  // the stale values from its first render. Set together right after a real join succeeds;
+  // cleared together on Leave.
+  const joinedRef = useRef(false);
+  const joinParamsRef = useRef(null);
+
+  // Socket.io calls this fresh before EVERY connection attempt — the initial one AND every
+  // automatic reconnect after a dropped connection (network blip, Render's free tier cycling
+  // the instance, etc). Setting socket.auth to a plain object once (the previous approach)
+  // only fixed the *first* connection — a reconnect would resend that same now-stale ~60s
+  // Clerk token and get silently rejected. A function here means each reconnect attempt gets
+  // its own fresh token, not a stale one from whenever the page first loaded.
+  useEffect(() => {
+    socket.auth = (cb) => {
+      if (!getAuthToken) return cb({});
+      getAuthToken({ skipCache: true })
+        .then((token) => cb({ token }))
+        .catch(() => cb({})); // let the server reject cleanly rather than hanging with no callback
+    };
+  }, [getAuthToken]);
+
   useEffect(() => {
     function handleReceive(message) {
       setMessages((prev) => [...prev, message]);
@@ -37,39 +59,42 @@ export default function App({ fixedDisplayName, getAuthToken, myUserId } = {}) {
         { id: `presence-${Date.now()}-${Math.random()}`, senderName: 'system', text: `${name} ${event} the room.`, composedVia: 'system', system: true },
       ]);
     }
+    // Socket.io's automatic reconnection re-establishes the transport but has no idea which
+    // room this connection was in — the server's per-socket `currentRoom` starts fresh at
+    // null on every new connection. Without this, the app looks fine after a silent
+    // auto-reconnect but every Send fails with "Join a room first." Only fires the rejoin
+    // when we'd already actually joined before (joinedRef) — on the very first connection,
+    // handleJoin's own explicit emit('join', ...) handles it, so this stays a no-op then.
+    function handleConnect() {
+      if (!joinedRef.current || !joinParamsRef.current) return;
+      socket.emit('join', joinParamsRef.current, (response) => {
+        if (response?.error) {
+          console.error('Silent rejoin after reconnect failed:', response.error);
+          handleLeave();
+          setJoinError('Your connection was interrupted and could not be restored — please rejoin.');
+        } else {
+          setMessages(response.history || []); // resync in case anything arrived while disconnected
+        }
+      });
+    }
 
     socket.on('message:receive', handleReceive);
     socket.on('typing', handleTyping);
     socket.on('presence', handlePresence);
+    socket.on('connect', handleConnect);
     return () => {
       socket.off('message:receive', handleReceive);
       socket.off('typing', handleTyping);
       socket.off('presence', handlePresence);
+      socket.off('connect', handleConnect);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleJoin = useCallback(
     async ({ displayName: name, room: roomCode, roomLabel: label, otherUserId, otherName }) => {
       setJoining(true);
       setJoinError(null);
-
-      // When Clerk is configured, the socket connection itself is verified server-side (see
-      // backend/index.js's io.use() middleware) — a fresh token has to be attached before
-      // connect(). skipCache: true is required here — Clerk's getToken() otherwise returns
-      // an internally cached token that can already be expired (or expire in the few seconds
-      // it takes to reach the server), causing a real "JWT is expired" rejection observed
-      // live even though the token looked fine client-side moments earlier.
-      if (getAuthToken) {
-        try {
-          const token = await getAuthToken({ skipCache: true });
-          socket.auth = { token };
-        } catch (err) {
-          setJoining(false);
-          setReconnecting(false);
-          setJoinError('Could not verify your session — try refreshing the page.');
-          return;
-        }
-      }
 
       // If the connection itself fails (expired/invalid token, server unreachable), Socket.io
       // never calls the 'join' ack below — without this listener, joining/reconnecting would
@@ -84,7 +109,8 @@ export default function App({ fixedDisplayName, getAuthToken, myUserId } = {}) {
       socket.once('connect_error', handleConnectError);
 
       socket.connect();
-      socket.emit('join', { room: roomCode, displayName: name, otherUserId, otherName }, (response) => {
+      const joinPayload = { room: roomCode, displayName: name, otherUserId, otherName };
+      socket.emit('join', joinPayload, (response) => {
         socket.off('connect_error', handleConnectError);
         setJoining(false);
         setReconnecting(false);
@@ -94,6 +120,8 @@ export default function App({ fixedDisplayName, getAuthToken, myUserId } = {}) {
           socket.disconnect();
           return;
         }
+        joinedRef.current = true;
+        joinParamsRef.current = joinPayload;
         setDisplayName(name);
         setRoom(roomCode);
         setRoomLabel(label || null);
@@ -102,7 +130,7 @@ export default function App({ fixedDisplayName, getAuthToken, myUserId } = {}) {
         setStoredSession({ room: roomCode, roomLabel: label || null, displayName: name });
       });
     },
-    [getAuthToken],
+    [],
   );
 
   // Auto-rejoin the last room on page load, if one was stored. Only carries room/displayName
@@ -118,8 +146,8 @@ export default function App({ fixedDisplayName, getAuthToken, myUserId } = {}) {
       setReconnecting(false);
     }
     // Deliberately run once on mount — fixedDisplayName is already resolved by the time App
-    // mounts (AuthedGate only renders it inside <SignedIn>), and handleJoin is stable across
-    // that single render via its useCallback dependency on getAuthToken.
+    // mounts (AuthedGate only renders it inside <SignedIn>), and handleJoin itself has no
+    // reactive dependencies (socket.auth, set separately above, supplies the token).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -136,6 +164,8 @@ export default function App({ fixedDisplayName, getAuthToken, myUserId } = {}) {
   function handleLeave() {
     socket.disconnect();
     clearStoredSession();
+    joinedRef.current = false;
+    joinParamsRef.current = null;
     setJoined(false);
     setRoom('');
     setRoomLabel(null);
