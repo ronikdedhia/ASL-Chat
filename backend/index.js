@@ -48,8 +48,12 @@ if (!hasElevenLabsKey) {
 // Comma-separated list of allowed frontend origins in production (e.g. your Vercel URL).
 // Left unset in local dev, wide open (undefined origin check just falls through cors()'s
 // default reflect-any-origin behavior) — restrict this before deploying somewhere public.
+// A browser's Origin header never has a trailing slash — stripped defensively here since a
+// copy-pasted URL with one (verified live: this exact mistake silently broke CORS in
+// production, with no error beyond a generic client-side "connection failed") would
+// otherwise never match and fail closed with no obvious cause.
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim().replace(/\/$/, ''))
   : null;
 const corsOptions = allowedOrigins ? { origin: allowedOrigins } : {};
 
